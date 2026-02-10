@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAllProducts, addProduct, updateProduct, deleteProduct } from '../../src/database/db';
 import { Product } from '../../src/types';
 import { formatPrice } from '../../src/utils/format';
+import { Colors, Shadows, Radius, Spacing, shared } from '../../src/theme';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -63,7 +64,6 @@ export default function ProductsScreen() {
       Alert.alert('Erreur', 'Prix invalide.');
       return;
     }
-
     if (editingProduct) {
       await updateProduct(editingProduct.id, name.trim(), p, s);
     } else {
@@ -91,39 +91,67 @@ export default function ProductsScreen() {
     );
   };
 
-  const renderItem = ({ item }: { item: Product }) => (
-    <View style={styles.card}>
-      <View style={styles.cardBody}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productPrice}>{formatPrice(item.price)}</Text>
-        <Text style={styles.productStock}>Stock : {item.stock}</Text>
+  const renderItem = ({ item }: { item: Product }) => {
+    const lowStock = item.stock > 0 && item.stock <= 5;
+    const noStock = item.stock <= 0;
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardIcon}>
+          <View style={[styles.iconCircle, noStock && { backgroundColor: Colors.dangerLight }]}>
+            <Ionicons name="cube" size={20} color={noStock ? Colors.danger : Colors.primary} />
+          </View>
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.productPrice}>{formatPrice(item.price)}</Text>
+          <View style={styles.stockRow}>
+            <View style={[
+              styles.stockBadge,
+              noStock && styles.stockBadgeDanger,
+              lowStock && styles.stockBadgeWarning,
+            ]}>
+              <Text style={[
+                styles.stockText,
+                noStock && styles.stockTextDanger,
+                lowStock && styles.stockTextWarning,
+              ]}>
+                {noStock ? 'Rupture' : `Stock : ${item.stock}`}
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.cardActions}>
+          <TouchableOpacity onPress={() => openEdit(item)} style={styles.actionBtn} activeOpacity={0.6}>
+            <Ionicons name="create-outline" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDelete(item)} style={styles.actionBtn} activeOpacity={0.6}>
+            <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.cardActions}>
-        <TouchableOpacity onPress={() => openEdit(item)} style={styles.actionBtn}>
-          <Ionicons name="pencil" size={20} color="#4A90D9" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDelete(item)} style={styles.actionBtn}>
-          <Ionicons name="trash" size={20} color="#E74C3C" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={shared.screen}>
+      {/* Header bar */}
       <View style={styles.header}>
-        <Text style={styles.title}>Produits</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={openAdd}>
-          <Ionicons name="add" size={24} color="#fff" />
+        <View>
+          <Text style={styles.headerCount}>{products.length} produit(s)</Text>
+        </View>
+        <TouchableOpacity style={styles.addBtn} onPress={openAdd} activeOpacity={0.8}>
+          <Ionicons name="add" size={20} color={Colors.textInverse} />
           <Text style={styles.addBtnText}>Ajouter</Text>
         </TouchableOpacity>
       </View>
 
       {products.length === 0 ? (
-        <View style={styles.empty}>
-          <Ionicons name="cube-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyText}>Aucun produit</Text>
-          <Text style={styles.emptySubText}>Appuyez sur "Ajouter" pour créer un produit</Text>
+        <View style={shared.emptyContainer}>
+          <View style={styles.emptyIcon}>
+            <Ionicons name="cube-outline" size={48} color={Colors.textTertiary} />
+          </View>
+          <Text style={shared.emptyTitle}>Aucun produit</Text>
+          <Text style={shared.emptySubtitle}>Appuyez sur "Ajouter" pour commencer</Text>
         </View>
       ) : (
         <FlatList
@@ -131,53 +159,62 @@ export default function ProductsScreen() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
         />
       )}
 
+      {/* Add/Edit Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
+          style={shared.modalOverlay}
         >
-          <View style={styles.modalContent}>
+          <View style={shared.modalSheet}>
+            <View style={shared.modalHandle} />
             <Text style={styles.modalTitle}>
               {editingProduct ? 'Modifier le produit' : 'Nouveau produit'}
             </Text>
 
-            <Text style={styles.label}>Nom</Text>
+            <Text style={shared.label}>Nom du produit</Text>
             <TextInput
-              style={styles.input}
+              style={shared.input}
               value={name}
               onChangeText={setName}
-              placeholder="Nom du produit"
+              placeholder="Ex: Sac de riz 25kg"
+              placeholderTextColor={Colors.textTertiary}
             />
 
-            <Text style={styles.label}>Prix</Text>
-            <TextInput
-              style={styles.input}
-              value={price}
-              onChangeText={setPrice}
-              placeholder="0"
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.label}>Stock</Text>
-            <TextInput
-              style={styles.input}
-              value={stock}
-              onChangeText={setStock}
-              placeholder="0"
-              keyboardType="numeric"
-            />
+            <View style={styles.formRow}>
+              <View style={styles.formCol}>
+                <Text style={[shared.label, { marginTop: 16 }]}>Prix</Text>
+                <TextInput
+                  style={shared.input}
+                  value={price}
+                  onChangeText={setPrice}
+                  placeholder="0"
+                  placeholderTextColor={Colors.textTertiary}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.formCol}>
+                <Text style={[shared.label, { marginTop: 16 }]}>Stock</Text>
+                <TextInput
+                  style={shared.input}
+                  value={stock}
+                  onChangeText={setStock}
+                  placeholder="0"
+                  placeholderTextColor={Colors.textTertiary}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
 
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
-                onPress={() => setModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)} activeOpacity={0.7}>
                 <Text style={styles.cancelBtnText}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, styles.saveBtn]} onPress={handleSave}>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
+                <Ionicons name="checkmark" size={20} color={Colors.textInverse} />
                 <Text style={styles.saveBtnText}>Enregistrer</Text>
               </TouchableOpacity>
             </View>
@@ -189,70 +226,100 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F6FA' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 8,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 12,
   },
-  title: { fontSize: 24, fontWeight: '700', color: '#2C3E50' },
+  headerCount: { fontSize: 13, color: Colors.textTertiary, fontWeight: '500' },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4A90D9',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  addBtnText: { color: '#fff', fontWeight: '600', marginLeft: 4 },
-  list: { padding: 16, paddingTop: 0 },
+    paddingVertical: 10,
+    borderRadius: Radius.sm,
+    gap: 4,
+    ...Shadows.sm,
+  } as any,
+  addBtnText: { color: Colors.textInverse, fontWeight: '700', fontSize: 14 },
+  list: { paddingHorizontal: Spacing.lg, paddingBottom: 20 },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginBottom: 10,
+    ...Shadows.md,
+  } as any,
+  cardIcon: { marginRight: 14 },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardBody: { flex: 1 },
-  productName: { fontSize: 16, fontWeight: '600', color: '#2C3E50' },
-  productPrice: { fontSize: 18, fontWeight: '700', color: '#4A90D9', marginTop: 4 },
-  productStock: { fontSize: 13, color: '#7F8C8D', marginTop: 2 },
-  cardActions: { justifyContent: 'center', gap: 12 },
-  actionBtn: { padding: 4 },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 18, color: '#999', marginTop: 12 },
-  emptySubText: { fontSize: 13, color: '#bbb', marginTop: 4 },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+  productName: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  productPrice: { fontSize: 17, fontWeight: '800', color: Colors.primary, marginTop: 2 },
+  stockRow: { flexDirection: 'row', marginTop: 6 },
+  stockBadge: {
+    backgroundColor: Colors.surfaceSecondary,
+    borderRadius: Radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
+  stockBadgeWarning: { backgroundColor: Colors.warningLight },
+  stockBadgeDanger: { backgroundColor: Colors.dangerLight },
+  stockText: { fontSize: 11, fontWeight: '600', color: Colors.textSecondary },
+  stockTextWarning: { color: Colors.warning },
+  stockTextDanger: { color: Colors.danger },
+  cardActions: { gap: 6 },
+  actionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.surfaceSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#2C3E50', marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: '600', color: '#555', marginTop: 12, marginBottom: 4 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.surfaceSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: Colors.text, marginBottom: 20 },
+  formRow: { flexDirection: 'row', gap: 12 },
+  formCol: { flex: 1 },
   modalActions: { flexDirection: 'row', marginTop: 24, gap: 12 },
-  modalBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
-  cancelBtn: { backgroundColor: '#F0F0F0' },
-  cancelBtnText: { color: '#666', fontWeight: '600' },
-  saveBtn: { backgroundColor: '#4A90D9' },
-  saveBtnText: { color: '#fff', fontWeight: '600' },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: Radius.sm,
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceSecondary,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  cancelBtnText: { color: Colors.textSecondary, fontWeight: '700', fontSize: 15 },
+  saveBtn: {
+    flex: 1.5,
+    paddingVertical: 14,
+    borderRadius: Radius.sm,
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    ...Shadows.sm,
+  } as any,
+  saveBtnText: { color: Colors.textInverse, fontWeight: '700', fontSize: 15 },
 });
