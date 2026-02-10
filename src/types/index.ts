@@ -59,6 +59,9 @@ export interface BusinessSettings {
   currencyCode: string;
   currencySymbol: string;
   currencyLocale: string;
+  invoiceTemplate: 'modern' | 'classic' | 'minimal' | 'elegant';
+  invoiceColor: string;
+  logoBase64: string;
 }
 
 export interface SalesPeriodStats {

@@ -13,6 +13,9 @@ const DEFAULT_SETTINGS: BusinessSettings = {
   currencyCode: 'XOF',
   currencySymbol: 'FCFA',
   currencyLocale: 'fr-FR',
+  invoiceTemplate: 'modern',
+  invoiceColor: '#1B6FEE',
+  logoBase64: '',
 };
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
