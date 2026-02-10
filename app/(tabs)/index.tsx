@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDashboardStats } from '../database/db';
-import { formatPrice } from '../utils/format';
+import { getDashboardStats } from '../../src/database/db';
+import { formatPrice } from '../../src/utils/format';
 
 export default function HomeScreen() {
   const [stats, setStats] = useState({

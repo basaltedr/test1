@@ -9,12 +9,12 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getAllProducts, createInvoice } from '../database/db';
-import { Product, CartItem } from '../types';
-import { formatPrice } from '../utils/format';
-import { generateInvoiceHtml } from '../utils/print';
+import { getAllProducts, createInvoice } from '../../src/database/db';
+import { Product, CartItem } from '../../src/types';
+import { formatPrice } from '../../src/utils/format';
+import { generateInvoiceHtml } from '../../src/utils/print';
 import * as Print from 'expo-print';
 
 export default function SaleScreen() {

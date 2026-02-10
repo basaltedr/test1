@@ -8,12 +8,12 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getAllInvoices, getInvoiceWithItems } from '../database/db';
-import { Invoice, InvoiceItem } from '../types';
-import { formatPrice, formatDate } from '../utils/format';
-import { generateInvoiceHtml, generateTicketHtml } from '../utils/print';
+import { getAllInvoices, getInvoiceWithItems } from '../../src/database/db';
+import { Invoice, InvoiceItem } from '../../src/types';
+import { formatPrice, formatDate } from '../../src/utils/format';
+import { generateInvoiceHtml, generateTicketHtml } from '../../src/utils/print';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { printToFileAsync } from 'expo-print';

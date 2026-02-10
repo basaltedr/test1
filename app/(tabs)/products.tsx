@@ -11,11 +11,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getAllProducts, addProduct, updateProduct, deleteProduct } from '../database/db';
-import { Product } from '../types';
-import { formatPrice } from '../utils/format';
+import { getAllProducts, addProduct, updateProduct, deleteProduct } from '../../src/database/db';
+import { Product } from '../../src/types';
+import { formatPrice } from '../../src/utils/format';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
