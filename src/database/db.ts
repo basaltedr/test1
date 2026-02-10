@@ -1,6 +1,19 @@
 import * as SQLite from 'expo-sqlite';
+import { BusinessSettings } from '../types';
 
 let db: SQLite.SQLiteDatabase;
+
+const DEFAULT_SETTINGS: BusinessSettings = {
+  businessName: 'GestiVente',
+  address: '',
+  phone: '',
+  email: '',
+  taxId: '',
+  footerMessage: 'Merci pour votre achat !',
+  currencyCode: 'XOF',
+  currencySymbol: 'FCFA',
+  currencyLocale: 'fr-FR',
+};
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (!db) {
@@ -41,7 +54,20 @@ async function initDatabase(database: SQLite.SQLiteDatabase): Promise<void> {
       FOREIGN KEY (invoiceId) REFERENCES invoices(id),
       FOREIGN KEY (productId) REFERENCES products(id)
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
+
+  // Seed default settings if empty
+  const count = await database.getFirstAsync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM settings');
+  if ((count?.cnt ?? 0) === 0) {
+    for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+      await database.runAsync('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [key, value]);
+    }
+  }
 }
 
 // ── Products ──────────────────────────────────────────────
@@ -124,6 +150,38 @@ export async function getInvoiceWithItems(invoiceId: number): Promise<{ invoice:
   const invoice = await database.getFirstAsync('SELECT * FROM invoices WHERE id = ?', [invoiceId]);
   const items = await database.getAllAsync('SELECT * FROM invoice_items WHERE invoiceId = ?', [invoiceId]);
   return { invoice, items };
+}
+
+// ── Settings ──────────────────────────────────────────────
+
+export async function getSettings(): Promise<BusinessSettings> {
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<{ key: string; value: string }>('SELECT key, value FROM settings');
+  const settings = { ...DEFAULT_SETTINGS };
+  for (const row of rows) {
+    if (row.key in settings) {
+      (settings as any)[row.key] = row.value;
+    }
+  }
+  return settings;
+}
+
+export async function saveSetting(key: string, value: string): Promise<void> {
+  const database = await getDatabase();
+  await database.runAsync(
+    'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+    [key, value]
+  );
+}
+
+export async function saveSettings(settings: Partial<BusinessSettings>): Promise<void> {
+  const database = await getDatabase();
+  for (const [key, value] of Object.entries(settings)) {
+    await database.runAsync(
+      'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+      [key, value]
+    );
+  }
 }
 
 // ── Dashboard stats ───────────────────────────────────────

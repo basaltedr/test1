@@ -29,3 +29,15 @@ export interface CartItem {
   product: Product;
   quantity: number;
 }
+
+export interface BusinessSettings {
+  businessName: string;
+  address: string;
+  phone: string;
+  email: string;
+  taxId: string;
+  footerMessage: string;
+  currencyCode: string;
+  currencySymbol: string;
+  currencyLocale: string;
+}
