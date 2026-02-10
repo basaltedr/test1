@@ -1,7 +1,30 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
-import { Colors } from '../../src/theme';
+import { Platform, StyleSheet } from 'react-native';
+import { Colors, Radius } from '../../src/theme';
+
+const tabStyles = StyleSheet.create({
+  header: {
+    backgroundColor: Colors.surface,
+  },
+  tabBar: {
+    backgroundColor: Colors.surface,
+    borderTopWidth: 0,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+    paddingTop: 8,
+    height: Platform.OS === 'ios' ? 88 : 64,
+    elevation: 8,
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+    marginTop: 2,
+  },
+  headerTitle: {
+    fontWeight: '700' as const,
+    fontSize: 18,
+  },
+});
 
 export default function TabsLayout() {
   return (
@@ -9,42 +32,12 @@ export default function TabsLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors.tabActive,
         tabBarInactiveTintColor: Colors.tabInactive,
-        headerStyle: {
-          backgroundColor: Colors.surface,
-          ...Platform.select({
-            ios: {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-            },
-            android: { elevation: 2 },
-          }),
-        },
+        headerStyle: tabStyles.header,
         headerTintColor: Colors.text,
-        headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+        headerTitleStyle: tabStyles.headerTitle,
         headerShadowVisible: false,
-        tabBarStyle: {
-          backgroundColor: Colors.surface,
-          borderTopWidth: 0,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-          paddingTop: 8,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          ...Platform.select({
-            ios: {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: -2 },
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-            },
-            android: { elevation: 8 },
-          }),
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginTop: 2,
-        },
+        tabBarStyle: tabStyles.tabBar,
+        tabBarLabelStyle: tabStyles.tabBarLabel,
       }}
     >
       <Tabs.Screen
