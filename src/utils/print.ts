@@ -1,7 +1,8 @@
-import { getInvoiceWithItems } from '../database/db';
+import { getInvoiceWithItems, getSettings } from '../database/db';
+import { BusinessSettings } from '../types';
 
-function formatPricePlain(amount: number): string {
-  return amount.toLocaleString('fr-FR') + ' FCFA';
+function formatPricePlain(amount: number, settings: BusinessSettings): string {
+  return amount.toLocaleString(settings.currencyLocale) + ' ' + settings.currencySymbol;
 }
 
 /**
@@ -9,6 +10,7 @@ function formatPricePlain(amount: number): string {
  */
 export async function generateInvoiceHtml(invoiceId: number): Promise<string> {
   const { invoice, items } = await getInvoiceWithItems(invoiceId);
+  const settings = await getSettings();
 
   const rows = items
     .map(
@@ -16,11 +18,18 @@ export async function generateInvoiceHtml(invoiceId: number): Promise<string> {
     <tr>
       <td>${item.productName}</td>
       <td style="text-align:center">${item.quantity}</td>
-      <td style="text-align:right">${formatPricePlain(item.unitPrice)}</td>
-      <td style="text-align:right"><strong>${formatPricePlain(item.total)}</strong></td>
+      <td style="text-align:right">${formatPricePlain(item.unitPrice, settings)}</td>
+      <td style="text-align:right"><strong>${formatPricePlain(item.total, settings)}</strong></td>
     </tr>`
     )
     .join('');
+
+  const businessInfoLines = [
+    settings.address,
+    settings.phone ? `Tél : ${settings.phone}` : '',
+    settings.email,
+    settings.taxId ? `N° fiscal : ${settings.taxId}` : '',
+  ].filter(Boolean).map(line => `<p>${line}</p>`).join('');
 
   return `
 <!DOCTYPE html>
@@ -31,7 +40,8 @@ export async function generateInvoiceHtml(invoiceId: number): Promise<string> {
     body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; color: #2C3E50; }
     .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #4A90D9; padding-bottom: 20px; }
     .header h1 { margin: 0; font-size: 28px; color: #4A90D9; }
-    .header p { margin: 4px 0; color: #666; }
+    .header .business-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .header p { margin: 2px 0; color: #666; font-size: 13px; }
     .info { display: flex; justify-content: space-between; margin-bottom: 30px; }
     .info div { }
     .info .label { font-size: 12px; color: #888; text-transform: uppercase; }
@@ -46,7 +56,9 @@ export async function generateInvoiceHtml(invoiceId: number): Promise<string> {
 </head>
 <body>
   <div class="header">
-    <h1>FACTURE</h1>
+    <div class="business-name">${settings.businessName}</div>
+    ${businessInfoLines}
+    <h1 style="margin-top:16px;">FACTURE</h1>
     <p>${invoice.number}</p>
   </div>
 
@@ -57,7 +69,7 @@ export async function generateInvoiceHtml(invoiceId: number): Promise<string> {
     </div>
     <div>
       <div class="label">Date</div>
-      <div class="value">${new Date(invoice.date).toLocaleDateString('fr-FR')}</div>
+      <div class="value">${new Date(invoice.date).toLocaleDateString(settings.currencyLocale)}</div>
     </div>
   </div>
 
@@ -76,12 +88,12 @@ export async function generateInvoiceHtml(invoiceId: number): Promise<string> {
   </table>
 
   <div class="total-row">
-    TOTAL : ${formatPricePlain(invoice.total)}
+    TOTAL : ${formatPricePlain(invoice.total, settings)}
   </div>
 
   <div class="footer">
-    Merci pour votre achat !<br/>
-    GestiVente — Application de gestion commerciale
+    ${settings.footerMessage}<br/>
+    ${settings.businessName}
   </div>
 </body>
 </html>`;
@@ -92,6 +104,7 @@ export async function generateInvoiceHtml(invoiceId: number): Promise<string> {
  */
 export async function generateTicketHtml(invoiceId: number): Promise<string> {
   const { invoice, items } = await getInvoiceWithItems(invoiceId);
+  const settings = await getSettings();
 
   const rows = items
     .map(
@@ -99,10 +112,15 @@ export async function generateTicketHtml(invoiceId: number): Promise<string> {
     <tr>
       <td>${item.productName}</td>
       <td style="text-align:center">${item.quantity}</td>
-      <td style="text-align:right">${formatPricePlain(item.total)}</td>
+      <td style="text-align:right">${formatPricePlain(item.total, settings)}</td>
     </tr>`
     )
     .join('');
+
+  const contactLines = [
+    settings.address,
+    settings.phone ? `Tél : ${settings.phone}` : '',
+  ].filter(Boolean).map(line => `<div class="center">${line}</div>`).join('');
 
   return `
 <!DOCTYPE html>
@@ -127,13 +145,14 @@ export async function generateTicketHtml(invoiceId: number): Promise<string> {
   </style>
 </head>
 <body>
-  <div class="center bold" style="font-size:16px;">GestiVente</div>
+  <div class="center bold" style="font-size:16px;">${settings.businessName}</div>
+  ${contactLines}
   <div class="center">Ticket de caisse</div>
   <div class="line"></div>
 
   <div>N° : ${invoice.number}</div>
   <div>Client : ${invoice.clientName}</div>
-  <div>Date : ${new Date(invoice.date).toLocaleString('fr-FR')}</div>
+  <div>Date : ${new Date(invoice.date).toLocaleString(settings.currencyLocale)}</div>
   <div class="line"></div>
 
   <table>
@@ -146,10 +165,10 @@ export async function generateTicketHtml(invoiceId: number): Promise<string> {
   </table>
 
   <div class="line"></div>
-  <div class="total">TOTAL : ${formatPricePlain(invoice.total)}</div>
+  <div class="total">TOTAL : ${formatPricePlain(invoice.total, settings)}</div>
   <div class="line"></div>
 
-  <div class="center" style="margin-top:8px;">Merci et à bientôt !</div>
+  <div class="center" style="margin-top:8px;">${settings.footerMessage}</div>
 </body>
 </html>`;
 }
